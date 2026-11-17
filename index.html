@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e0d12">
+<title>Dos Canales</title>
+<style>
+  :root{
+    --bg:#0e0d12; --ink:#f1ece4; --muted:#9d958a; --line:#2a2731;
+    --left:#e8a87c; --right:#8fb8de; --both:#d9c9f0;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--ink);font-family:Georgia,"Times New Roman",serif;
+    display:flex;justify-content:center;-webkit-font-smoothing:antialiased}
+  main{width:100%;max-width:440px;min-height:100%;padding:calc(28px + env(safe-area-inset-top)) 24px calc(28px + env(safe-area-inset-bottom));
+    display:flex;flex-direction:column}
+  .screen{display:none;flex:1;flex-direction:column}
+  .screen.on{display:flex}
+  h1{font-weight:normal;font-size:40px;letter-spacing:.02em;line-height:1.05;margin-top:12vh}
+  h1 em{font-style:italic;color:var(--both)}
+  .sub{color:var(--muted);font-size:17px;line-height:1.5;margin-top:14px}
+  .ears{display:flex;gap:12px;margin:36px 0 8px}
+  .ear{flex:1;border:1px solid var(--line);border-radius:14px;padding:16px 14px}
+  .ear b{display:block;font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-family:system-ui,sans-serif;font-weight:600}
+  .ear span{display:block;color:var(--muted);font-size:15px;margin-top:6px;line-height:1.35}
+  .ear.l b{color:var(--left)} .ear.r b{color:var(--right)}
+  .tips{color:var(--muted);font-size:14px;line-height:1.55;margin-top:18px;font-family:system-ui,sans-serif}
+  .tips li{margin-left:18px;margin-top:4px}
+  .spacer{flex:1}
+  button{font-family:system-ui,sans-serif;font-size:17px;font-weight:600;border:0;border-radius:999px;cursor:pointer;
+    padding:18px 22px;width:100%;transition:opacity .3s, transform .1s}
+  button:active{transform:scale(.98)}
+  .primary{background:var(--ink);color:var(--bg)}
+  .primary:disabled{opacity:.18;cursor:default}
+  .ghost{background:transparent;color:var(--muted);border:1px solid var(--line);margin-top:10px}
+  .ghost:disabled{opacity:.25}
+  .bar{height:2px;background:var(--line);border-radius:2px;overflow:hidden;margin:22px 0 4px}
+  .bar i{display:block;height:100%;width:0;background:var(--both);transition:width .2s}
+  .small{font-family:system-ui,sans-serif;font-size:13px;color:var(--muted)}
+  /* play screen */
+  .act{font-family:system-ui,sans-serif;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-top:4vh}
+  .acttitle{font-size:30px;margin-top:8px;font-style:italic}
+  .orb{width:180px;height:180px;margin:9vh auto 0;position:relative}
+  .orb > div{position:absolute;inset:0;border-radius:50%}
+  /* outer layer: fades the light in/out; inner layer: breathes */
+  .orb .light{opacity:0;transition:opacity 1.2s ease}
+  .orb .light.on{opacity:1}
+  .orb .light i{position:absolute;inset:-14%;border-radius:50%;display:block;opacity:.2;transform:scale(.86);filter:blur(6px)}
+  .orb .light.on i{animation:breath 4.2s ease-in-out infinite}
+  .orb .l i{background:radial-gradient(circle at 34% 50%, var(--left) 0%, rgba(232,168,124,.35) 30%, transparent 62%)}
+  .orb .r i{background:radial-gradient(circle at 66% 50%, var(--right) 0%, rgba(143,184,222,.35) 30%, transparent 62%)}
+  .orb .c i{background:radial-gradient(circle at 50% 50%, var(--both) 0%, rgba(217,201,240,.35) 30%, transparent 60%)}
+  .orb .r.on i{animation-delay:-.7s}
+  @keyframes breath{
+    0%,100%{opacity:.18;transform:scale(.84);filter:blur(10px) brightness(.7)}
+    50%{opacity:1;transform:scale(1.12);filter:blur(2px) brightness(1.25)}
+  }
+  .orb .ring{border:1px solid var(--line);transition:box-shadow 1.2s, border-color 1.2s}
+  .orb.speaking .ring{animation:ringglow 4.2s ease-in-out infinite}
+  @keyframes ringglow{50%{border-color:#6a6372;box-shadow:0 0 38px rgba(217,201,240,.18), inset 0 0 30px rgba(217,201,240,.08)}}
+  .orb.breathe .ring{animation:br 5s ease-in-out infinite}
+  @keyframes br{50%{transform:scale(1.06);border-color:#4a4552}}
+  .status{text-align:center;font-size:19px;line-height:1.45;margin-top:5vh;min-height:84px;padding:0 6px}
+  .timer{text-align:center;font-family:system-ui,sans-serif;font-variant-numeric:tabular-nums;color:var(--muted);font-size:14px;margin-top:6px;min-height:20px}
+  .progress{display:flex;gap:6px;justify-content:center;margin-top:18px}
+  .progress span{width:28px;height:3px;border-radius:2px;background:var(--line)}
+  .progress span.done{background:var(--muted)} .progress span.cur{background:var(--ink)}
+  /* review */
+  details{margin-top:16px;font-family:system-ui,sans-serif}
+  summary{color:var(--muted);font-size:13px;cursor:pointer}
+  .clips{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}
+  .clips button{padding:9px 0;font-size:13px;background:#1b1a21;color:var(--ink);border-radius:8px}
+  .clips button.L{color:var(--left)} .clips button.R{color:var(--right)} .clips button.C{color:var(--both)}
+  .end h1{margin-top:22vh}
+</style>
+</head>
+<body>
+<main>
+
+  <!-- intro -->
+  <section class="screen on" id="intro">
+    <h1>Dos <em>Canales</em></h1>
+    <p class="sub">Unos 15 minutos para dos personas, un solo par de audífonos y una voz distinta en cada oído.</p>
+    <div class="ears">
+      <div class="ear l"><b>Izquierdo</b><span>Ella. Escucha a su guía.</span></div>
+      <div class="ear r"><b>Derecho</b><span>Él. Escucha a la suya.</span></div>
+    </div>
+    <ul class="tips">
+      <li>Siéntense frente a frente, cerca.</li>
+      <li>Volumen a la mitad; lo ajustan con la primera voz.</li>
+      <li>En iPhone, quita el modo silencio.</li>
+    </ul>
+    <div class="spacer"></div>
+    <div class="bar"><i id="loadbar"></i></div>
+    <p class="small" id="loadtxt">Cargando audio…</p>
+    <button class="primary" id="startBtn" disabled style="margin-top:14px">Empezar</button>
+    <details>
+      <summary>Revisar clips (para quien lo armó)</summary>
+      <div class="clips" id="clipList"></div>
+    </details>
+  </section>
+
+  <!-- play -->
+  <section class="screen" id="play">
+    <p class="act" id="actNum">Acto 1</p>
+    <p class="acttitle" id="actTitle">Calibración</p>
+    <div class="orb" id="orb"><div class="ring"></div><div class="light l"><i></i></div><div class="light r"><i></i></div><div class="light c"><i></i></div></div>
+    <p class="status" id="status"></p>
+    <p class="timer" id="timer"></p>
+    <div class="progress" id="prog"></div>
+    <div class="spacer"></div>
+    <button class="primary" id="nextBtn" disabled>Siguiente</button>
+    <button class="ghost" id="againBtn" disabled>Repetir lo último</button>
+  </section>
+
+  <!-- end -->
+  <section class="screen end" id="end">
+    <h1>Lo demás<br><em>lo escriben ustedes.</em></h1>
+    <div class="spacer"></div>
+    <button class="ghost" onclick="location.reload()">Volver al inicio</button>
+  </section>
+
+</main>
+<script>
+/* ---------------- audio manifest ---------------- */
+const BASE = "audio/";
+const CLIPS = [
+  ...Array.from({length:13},(_,i)=>"L"+String(i+2).padStart(2,"0")),
+  ...Array.from({length:13},(_,i)=>"R"+String(i+2).padStart(2,"0")),
+  ...Array.from({length:11},(_,i)=>"C"+String(i+1).padStart(2,"0")).flatMap(c=>c==="C03"?["C03a","C03b","C03c","C03d","C03e"]:[c]),
+];
+const MUSIC = ["music_act1","music_act2","music_act3","music_act4","music_act5"];
+const SRC = window.EMBEDDED_AUDIO || null; // standalone build injects data URIs here
+
+/* ---------------- script ----------------
+   Each segment plays to the end, then waits for "Siguiente" (unless auto).
+   Actions: {act}, {music}, {bells}, {say:[codes]}, {wait:s}, {until:s} (seconds since music start)  */
+const ACTS = [
+  ["Acto 1","Calibración"],["Acto 2","Juego ligero"],["Acto 3","Lo personal"],
+  ["Acto 4","Vulnerabilidad"],["Acto 5","La mirada"]
+];
+const SEGMENTS = [
+  [{act:0},{bells:true},{music:"music_act1",fromStart:true},{say:["C01"]}],
+  [{say:["L02","R02"]},{say:["C02"]}],
+  [{act:1},{music:"music_act2",fromStart:true},{say:["L03","R03"]},{say:["C03a"]},{wait:1},{say:["C03b"]},{wait:7,text:"Contesten…"},{say:["C03c"]},{wait:7,text:"Contesten…"},{say:["C03d"]},{wait:7,text:"Contesten…"},{say:["C03e"]},{wait:7,text:"Contesten…"}],
+  [{say:["L04","R04"]}],
+  [{say:["L05","R05"]}],
+  [{say:["C04"]}],
+  [{act:2},{music:"music_act3",fromStart:true},{say:["C05"]},{say:["L06","R06"]}],
+  [{say:["L07","R07"]}],
+  [{say:["L08","R08"]}],
+  [{say:["C06"]}],
+  [{act:3},{music:"music_act4",fromStart:true},{say:["L09","R09"]}],
+  [{say:["L10","R10"]}],
+  [{say:["C07"]}],
+  [{say:["L11","R11"]}],
+  [{act:4},{music:null},{say:["C08"]},{wait:5},{say:["L12","R12"]},
+   {music:"music_act5",gaze:true},{say:["C09"]},
+   {until:58},{say:["L13","R13"]},
+   {until:231},{say:["C10"]},{wait:5},{say:["L14","R14"]},{say:["C11"]},{wait:6},{end:true}]
+];
+const AUTO_LAST = true;
+
+/* ---------------- engine ---------------- */
+const $ = id => document.getElementById(id);
+let ctx, master, musicGain, buffers = {}, curMusic = null, musicStart = 0, segIdx = 0, running = false, abortToken = 0, wakeLock = null, gazeMode = false;
+const BED = {pause:0.42, under:0.17, gaze:0.95, gazeUnder:0.7};
+
+async function load(){
+  const all = [...CLIPS, ...MUSIC];
+  let n = 0;
+  const tmpCtx = new (window.AudioContext||window.webkitAudioContext)();
+  ctx = tmpCtx;
+  await Promise.all(all.map(async name=>{
+    const url = SRC ? SRC[name] : BASE + name + ".mp3";
+    const res = await fetch(url);
+    const arr = await res.arrayBuffer();
+    buffers[name] = await new Promise((ok,err)=>ctx.decodeAudioData(arr,ok,err));
+    n++; $("loadbar").style.width = (100*n/all.length)+"%";
+  }));
+  $("loadtxt").textContent = "Listo. Pónganse los audífonos.";
+  $("startBtn").disabled = false;
+  buildClipList();
+}
+
+function setupGraph(){
+  master = ctx.createGain(); master.gain.value = 1; master.connect(ctx.destination);
+  musicGain = ctx.createGain(); musicGain.gain.value = 0; musicGain.connect(master);
+}
+
+function voiceChain(code){
+  const ch = code[0];
+  const g = ctx.createGain();
+  const p = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+  // center voice is split across both ears (-3 dB each), so compensate
+  g.gain.value = ch==="C" ? 1.41 : 1.0;
+  if(p){ p.pan.value = ch==="L" ? -1 : ch==="R" ? 1 : 0; g.connect(p); p.connect(master); }
+  else { g.connect(master); }
+  return g;
+}
+
+function playBuffer(name, dest){
+  const s = ctx.createBufferSource(); s.buffer = buffers[name]; s.connect(dest); s.start();
+  return new Promise(ok=>{ s.onended = ok; });
+}
+
+function rampMusic(v, t=0.5){
+  const now = ctx.currentTime;
+  musicGain.gain.cancelScheduledValues(now);
+  musicGain.gain.setValueAtTime(musicGain.gain.value, now);
+  musicGain.gain.linearRampToValueAtTime(v, now + t);
+}
+
+function startMusic(name, gaze, fromStart){
+  const fadeOut = 2.5, now = ctx.currentTime;
+  if(curMusic){
+    const old = curMusic;
+    old.g.gain.setValueAtTime(old.g.gain.value, now);
+    old.g.gain.linearRampToValueAtTime(0, now + fadeOut);
+    old.src.stop(now + fadeOut + 0.1);
+    curMusic = null;
+  }
+  gazeMode = !!gaze;
+  if(!name) return;
+  const src = ctx.createBufferSource(); src.buffer = buffers[name];
+  src.loop = !gaze;
+  if(fromStart){ src.loopStart = 4.0; src.loopEnd = buffers[name].duration; } // first pass plays the real intro
+  const g = ctx.createGain(); g.gain.setValueAtTime(0, now);
+  src.connect(g); g.connect(musicGain);
+  const quick = gaze || fromStart;
+  src.start(now + (quick ? 0 : 0.3));
+  g.gain.linearRampToValueAtTime(1, now + (quick ? 0.1 : 3));
+  curMusic = {src, g};
+  musicStart = now;
+  rampMusic(gaze ? BED.gaze : BED.pause, 1.5);
+}
+
+function bells(){
+  const tone = (freq, pan, t0) => {
+    const o = ctx.createOscillator(), o2 = ctx.createOscillator(), g = ctx.createGain(), p = ctx.createStereoPanner();
+    o.type = "sine"; o.frequency.value = freq; o2.type = "sine"; o2.frequency.value = freq*2.76;
+    const g2 = ctx.createGain(); g2.gain.value = 0.25;
+    o.connect(g); o2.connect(g2); g2.connect(g); g.connect(p); p.connect(master); p.pan.value = pan;
+    const t = ctx.currentTime + t0;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.5, t+0.01); g.gain.exponentialRampToValueAtTime(0.0008, t+2.6);
+    o.start(t); o2.start(t); o.stop(t+2.7); o2.stop(t+2.7);
+  };
+  tone(1318.5, -1, 0);   // high bell, left
+  tone(392, 1, 0);       // low bell, right
+  return sleep(2.8);
+}
+
+function setLights(lit){
+  const orb = $("orb");
+  ["l","r","c"].forEach(k=>orb.querySelector(".light."+k).classList.toggle("on", lit.has(k.toUpperCase())));
+  orb.classList.toggle("speaking", lit.size>0);
+}
+
+const sleep = s => new Promise(ok=>setTimeout(ok, s*1000));
+
+async function say(codes, token){
+  const lit = new Set(codes.map(c=>c[0]));
+  setLights(lit);
+  rampMusic(gazeMode ? BED.gazeUnder : BED.under, 0.4);
+  await sleep(0.35);
+  await Promise.all(codes.map(c=>playBuffer(c, voiceChain(c))));
+  setLights(new Set());
+  if(token !== abortToken) return;
+  rampMusic(gazeMode ? BED.gaze : BED.pause, 1.2);
+  await sleep(0.6);
+}
+
+async function runSegment(i, replay=false){
+  const token = ++abortToken;
+  running = true;
+  $("nextBtn").disabled = true; $("againBtn").disabled = true;
+  const last = i === SEGMENTS.length-1;
+  $("nextBtn").style.visibility = $("againBtn").style.visibility = last ? "hidden" : "visible";
+  $("status").textContent = "Escuchen…";
+  $("orb").classList.remove("breathe");
+  for(const a of SEGMENTS[i]){
+    if(token !== abortToken) return;
+    if(a.act !== undefined){ setAct(a.act); continue; }
+    if(a.music !== undefined){ if(!replay) startMusic(a.music, a.gaze, a.fromStart); continue; }
+    if(a.bells){ await bells(); continue; }
+    if(a.say){ await say(a.say, token); continue; }
+    if(a.wait){ if(a.text){ $("status").textContent = a.text; await sleep(a.wait); $("status").textContent = "Escuchen…"; } else await sleep(a.wait); continue; }
+    if(a.until){
+      $("status").textContent = "Mírense. Sin hablar.";
+      $("orb").classList.add("breathe");
+      while(ctx.currentTime - musicStart < a.until){
+        if(token !== abortToken) return;
+        const left = Math.max(0, 240 - (ctx.currentTime - musicStart));
+        $("timer").textContent = Math.floor(left/60)+":"+String(Math.floor(left%60)).padStart(2,"0");
+        await sleep(0.25);
+      }
+      continue;
+    }
+    if(a.end){ finish(); return; }
+  }
+  if(token !== abortToken) return;
+  running = false;
+  if(i === SEGMENTS.length-1) return;
+  $("status").textContent = "Platiquen. Cuando estén listos, toquen Siguiente.";
+  $("orb").classList.add("breathe");
+  $("nextBtn").disabled = false; $("againBtn").disabled = false;
+}
+
+function setAct(n){
+  $("actNum").textContent = ACTS[n][0]; $("actTitle").textContent = ACTS[n][1];
+  $("timer").textContent = "";
+  $("prog").innerHTML = ACTS.map((_,k)=>`<span class="${k<n?'done':k===n?'cur':''}"></span>`).join("");
+}
+
+function finish(){
+  if(curMusic) startMusic(null);
+  try{ wakeLock && wakeLock.release(); }catch(e){}
+  show("end");
+}
+
+function show(id){ document.querySelectorAll(".screen").forEach(s=>s.classList.toggle("on", s.id===id)); }
+
+async function keepAwake(){
+  try{ if("wakeLock" in navigator) wakeLock = await navigator.wakeLock.request("screen"); }catch(e){}
+}
+document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible" && running!==null) keepAwake(); });
+
+$("startBtn").onclick = async ()=>{
+  try{ if(navigator.audioSession) navigator.audioSession.type = "playback"; }catch(e){}
+  await ctx.resume();
+  setupGraph();
+  keepAwake();
+  show("play");
+  segIdx = 0; runSegment(0);
+};
+$("nextBtn").onclick = ()=>{ segIdx++; runSegment(segIdx); };
+$("againBtn").onclick = ()=>{ runSegment(segIdx, true); };
+
+/* review list */
+function buildClipList(){
+  const box = $("clipList");
+  CLIPS.forEach(c=>{
+    const b = document.createElement("button"); b.textContent = c; b.className = c[0];
+    b.onclick = async ()=>{ await ctx.resume(); if(!master) setupGraph(); playBuffer(c, voiceChain(c)); };
+    box.appendChild(b);
+  });
+}
+
+load().catch(e=>{ $("loadtxt").textContent = "No se pudo cargar el audio: " + e.message; });
+</script>
+</body>
+</html>
